@@ -15,9 +15,36 @@ env:
 jobs:
   unit-testing:
     name: Unit Testing
-    runs-on: ubuntu-latest
-    container:
-      image: node:20
+    # Comment: Another concept is a "service container" - if a test step for instance relies on
+    #          interacting with another service (e.g. MongoDB database), a service container
+    #          can be spun up which the main code can interact with.
+    #          Code commented out below has been added as an example.
+    # # services:
+    # #   mongo-db:
+    # #     image: siddharth67/mongo-db:non-prod
+    # #     ports:
+    # #       - 27017:27017
+    
+    # Comment: Can use "strategy" combined with "matrix" to specify that we want to run a job
+    #          across a combination of configurations.
+    #          Code commented out below as example.
+    #          NB: Where you use e.g. node version (i.e. in container step above), you have to
+    #              change it to use the value from the matrix setup below. Same for operating system.
+    # # strategy:
+    # #   matrix:
+    # #     nodejs_version: [18, 20]
+    # #     os: [ubuntu-latest, macos-latest]
+    # #     exclude:
+    # #       - nodejs_version: 18
+    # #         os: macos-latest
+
+    # Comment: This job uses a "job container", meaning a container image is specified,
+    #          and a container is started within which the job is run.
+    #
+    # # container:
+    # #   image: node:20 # node:${{ matrix.nodejs_version }}
+    
+    runs-on: ubuntu-latest # ${{ matrix.os }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
