@@ -142,14 +142,14 @@ jobs:
         with:
            version: 'v1.26.0'
       
+      - name: Set Kube Context
+        uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: '${{ secrets.KUBECONFIG }}'
+      
       - name: Verify Kubectl
-        run: kubectl version --short
-      
-      # - name: Set Kube Context
-      #   uses: azure/k8s-set-context@v3
-      #   with:
-      #     method: kubeconfig
-      #     kubeconfig: '${{ secrets.KUBECONFIG }}'
-      
-      # - name: Verify Kubectl
-      #   run: kubectl version --short -o yaml
+        run: |
+          echo "Below is the kubectl info"
+          echo "-------------------------"
+          kubectl version --short # -o yaml
