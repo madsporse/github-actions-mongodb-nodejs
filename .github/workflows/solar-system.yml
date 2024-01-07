@@ -148,6 +148,9 @@ jobs:
           method: kubeconfig
           kubeconfig: '${{ secrets.KUBECONFIG }}'
       
+      - name: Start Minikube
+        run: minikube start
+
       - name: Verify Kubectl
         run: |
           echo "Below is the kubectl info"
