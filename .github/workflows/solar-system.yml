@@ -137,10 +137,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
       
-      - name: Install Kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-           version: 'v1.26.0'
+      # - name: Install Kubectl
+      #   uses: azure/setup-kubectl@v3
+      #   with:
+      #      version: 'v1.26.0'
+      # NB: "ubuntu-latest" image should come with kubectl already installed.
       
       - name: Set Kube Context
         uses: azure/k8s-set-context@v3
