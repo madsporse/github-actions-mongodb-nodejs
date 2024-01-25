@@ -149,7 +149,7 @@ jobs:
           method: kubeconfig
           kubeconfig: '${{ secrets.KUBECONFIG }}'
 
-      - name: Testing on a k8s Kind Cluster
+      - name: Set Up k8s Kind Cluster
         uses: helm/kind-action@v1.8.0
 
       # - name: Start Minikube
