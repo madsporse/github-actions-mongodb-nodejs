@@ -133,6 +133,8 @@ jobs:
     needs: docker
     environment:
       name: development
+    env:
+      KUBECONFIG: ${{ secrets.KUBECONFIG }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
