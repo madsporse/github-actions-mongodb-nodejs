@@ -154,10 +154,14 @@ jobs:
       - name: Verify Current Context
         run: kubectl config current-context
       
+      # - name: Start Minikube
+      #   run: minikube start # --kubernetes-version='v1.26'
+      #   # NB: Major and minor version number should match kubectl.
+      
       - name: Install Kind
         uses: helm/kind-action@v1.8.0
-        with:
-          install_only: true
+        # with:
+        #   install_only: true
         # NB: "ubuntu-latest" image comes with kubectl already installed.
       
       # - name: Export Kubeconfig
@@ -169,21 +173,16 @@ jobs:
       #   run: kind create cluster
       
       - name: Get Cluster Details
-        run: | 
-          kubectl version -o yaml
-          echo -----------------------------------------------
-          kubectl get nodes
-          echo -----------------------------------------------
-          kubectl config get-contexts
+        run: kubectl config get-contexts
+          # echo -----------------------------------------------
+          # kubectl version -o yaml
+          # echo -----------------------------------------------
+          # kubectl get nodes
       
       # - name: Verify Current Context
       #   run: |
       #     echo "Current context:"
       #     kubectl config current-context
-
-      # - name: Start Minikube
-      #   run: minikube start # --kubernetes-version='v1.26'
-      #   # NB: Major and minor version number should match kubectl.
 
       # - name: Verify Cluster Information (Kind)
       #   run: kind get clusters
