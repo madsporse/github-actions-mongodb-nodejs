@@ -151,8 +151,11 @@ jobs:
           method: kubeconfig
           kubeconfig: '${{ secrets.KUBECONFIG }}'
       
-      - name: Check Kubectl Version
-        run: kubectl version --short -o yaml
+      - name: Get Cluster Details
+        run: | 
+          kubectl version -o yaml
+          echo -----------------------------------------------
+          kubectl get nodes
       
       # - name: Install Kind
       #   uses: helm/kind-action@v1.8.0
@@ -192,23 +195,29 @@ jobs:
       # NB: A Kubernetes cluster should be started before kubectl can
       #     be used. This can be done using e.g. KIND or Minikube.
 
-      - name: Fetch NGINX Ingress Controller IP
-        run: >
-          echo "INGRESS_IP=$(kubectl -n ingress-nginx get services
-          ingress-nginx-controller -o
-          jsonpath='{.status.loadBalancer.ingress[0].ip}')" >> $GITHUB_ENV
+      # - name: Fetch NGINX Ingress Controller IP
+      #   run: >
+      #     echo "INGRESS_IP=$(kubectl -n ingress-nginx get services
+      #     ingress-nginx-controller -o
+      #     jsonpath='{.status.loadBalancer.ingress[0].ip}')" >> $GITHUB_ENV
       
-      - name: Replace Placeholders in Kubernetes Manifest
-        uses: cschleiden/replace-tokens@v1
-        with:
-          tokenPrefix: '_{_'
-          tokenSuffix: '_}_'
-          files: '["kubernetes/development/*.yaml"]'
-        env:
-          NAMESPACE: '${{ vars.NAMESPACE }}'
-          REPLICAS: '${{ vars.REPLICAS }}'
-          IMAGE: 'ghcr.io/${{ github.repository_owner }}/solar-system:${{ github.sha }}'
-          INGRESS_IP: '${{ env.INGRESS_IP }}'
+      # - name: Replace Placeholders in Kubernetes Manifest
+      #   uses: cschleiden/replace-tokens@v1
+      #   with:
+      #     tokenPrefix: '_{_'
+      #     tokenSuffix: '_}_'
+      #     files: '["kubernetes/development/*.yaml"]'
+      #   env:
+      #     NAMESPACE: '${{ vars.NAMESPACE }}'
+      #     REPLICAS: '${{ vars.REPLICAS }}'
+      #     IMAGE: 'ghcr.io/${{ github.repository_owner }}/solar-system:${{ github.sha }}'
+      #     INGRESS_IP: '${{ env.INGRESS_IP }}'
       
-      - name: Check That Kubernetes Manifests Are Correct
-        run: cat kubernetes/development/*.yaml
+      # - name: Check That Kubernetes Manifests Are Correct
+      #   run: cat kubernetes/development/*.yaml
+      
+      # NB: Difference between GITHUB_ENV and GITHUB_OUTPUT:
+      #     - GITHUB_ENV: Used to set environment variables that are
+      #                   available to all subsequent steps in a job.
+      #     - GITHUB_OUTPUT: Used to set output parameters or values that
+      #                     can be used by other jobs in the same workflow.
