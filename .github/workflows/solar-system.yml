@@ -139,17 +139,20 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # - name: Install Kubectl
-      #   uses: azure/setup-kubectl@v3
-      #   # with:
-      #   #    version: 'v1.26.0'
-      # # NB: "ubuntu-latest" image comes with kubectl already installed.
+      - name: Install Kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+           version: 'v1.26.0'
+      # NB: "ubuntu-latest" image comes with kubectl already installed.
 
-      # - name: Set Kube Context
-      #   uses: azure/k8s-set-context@v3
-      #   with:
-      #     method: kubeconfig
-      #     kubeconfig: '${{ secrets.KUBECONFIG }}'
+      - name: Set Kube Context
+        uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: '${{ secrets.KUBECONFIG }}'
+      
+      - name: Check Kubectl Version
+        run: kubectl version --short -o yaml
       
       # - name: Install Kind
       #   uses: helm/kind-action@v1.8.0
@@ -162,8 +165,8 @@ jobs:
       #     mkdir -p ~/.kube
       #     echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
       
-      - name: Set Up k8s Kind Cluster
-        run: kind create cluster
+      # - name: Set Up k8s Kind Cluster
+      #   run: kind create cluster
       
       # - name: Verify Current Context
       #   run: |
@@ -174,13 +177,14 @@ jobs:
       #   run: minikube start # --kubernetes-version='v1.26'
       #   # NB: Major and minor version number should match kubectl.
 
-      - name: Verify Cluster Information (Kind)
-        run: kind get clusters
+      # - name: Verify Cluster Information (Kind)
+      #   run: kind get clusters
       
-      - name: Verify Cluster Information (kubectl)
-        run: |
-          kubectl cluster-info
-          kubectl get nodes
+      # - name: Verify Cluster Information (kubectl)
+      #   run: |
+      #     kubectl cluster-info
+      #     kubectl get nodes
+
       # - name: Verify Cluster Information (kubectl)
       #   run: |
       #     kubectl cluster-info --context kind-kind --kubeconfig /home/runner/.kube/config
