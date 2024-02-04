@@ -133,8 +133,6 @@ jobs:
     needs: docker
     environment:
       name: development
-    env:
-      KUBECONFIG: ${{ secrets.KUBECONFIG }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -145,11 +143,16 @@ jobs:
            version: 'v1.26.0'
       # NB: "ubuntu-latest" image comes with kubectl already installed.
 
-      - name: Set Kube Context
-        uses: azure/k8s-set-context@v3
-        with:
-          method: kubeconfig
-          kubeconfig: '${{ secrets.KUBECONFIG }}'
+      # - name: Set Kube Context
+      #   uses: azure/k8s-set-context@v3
+      #   with:
+      #     method: kubeconfig
+      #     kubeconfig: '${{ secrets.KUBECONFIG }}'
+
+      - name: Create Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
       
       - name: Verify Current Context
         run: kubectl config current-context
@@ -164,7 +167,7 @@ jobs:
           install_only: true
         # NB: "ubuntu-latest" image comes with kubectl already installed.
       
-      # - name: Export Kubeconfig
+      # - name: Create Kubeconfig
       #   run: |
       #     mkdir -p ~/.kube
       #     echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
