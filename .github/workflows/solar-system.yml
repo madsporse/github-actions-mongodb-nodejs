@@ -173,11 +173,12 @@ jobs:
       #   run: kind create cluster
       
       - name: Get Cluster Details
-        run: kubectl config get-contexts
-          # echo -----------------------------------------------
-          # kubectl version -o yaml
-          # echo -----------------------------------------------
-          # kubectl get nodes
+        run: |
+          kubectl config get-contexts
+          echo -----------------------------------------------
+          kubectl version -o yaml
+          echo -----------------------------------------------
+          kubectl get nodes
       
       # - name: Verify Current Context
       #   run: |
