@@ -150,7 +150,7 @@ jobs:
           kubeconfig: '${{ secrets.KUBECONFIG }}'
       
       - name: Install Kind
-        uses: helm/kind-actions@1.8.0
+        uses: helm/kind-action@1.8.0
         with:
           install_only: true
 
