@@ -27,7 +27,7 @@ jobs:
     # #     options:  # NB: If running both job and service in container, port mapping is not needed, and you can refer the container name instead
     # #       --name mongo  # container name - useful for if we also run the job in a container
     # # env:
-    # #   MONGO_URI: 'mongodb://localhost:27017/superData' / 'mongodb://mongo:27017/superData' # last on if job in container
+    # #   MONGO_URI: 'mongodb://localhost:27017/superData' / 'mongodb://mongo:27017/superData' # last one if service container used
     # #   MONGO_USERNAME: non-prod-user
     # #   MONGO_PASSWORD: non-prod-password
 
@@ -106,6 +106,7 @@ jobs:
           retention-days: 7
 
   docker:
+    name: Containerization
     permissions:
       packages: write
     runs-on: ubuntu-latest
