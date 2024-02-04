@@ -151,6 +151,9 @@ jobs:
           method: kubeconfig
           kubeconfig: '${{ secrets.KUBECONFIG }}'
       
+      - name: Verify Current Context
+        run: kubectl config current-context
+      
       - name: Install Kind
         uses: helm/kind-action@v1.8.0
         with:
@@ -162,14 +165,16 @@ jobs:
       #     mkdir -p ~/.kube
       #     echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
       
-      - name: Set Up k8s Kind Cluster
-        run: kind create cluster
+      # - name: Set Up k8s Kind Cluster
+      #   run: kind create cluster
       
       - name: Get Cluster Details
         run: | 
           kubectl version -o yaml
           echo -----------------------------------------------
           kubectl get nodes
+          echo -----------------------------------------------
+          kubectl config get-contexts
       
       # - name: Verify Current Context
       #   run: |
