@@ -153,9 +153,14 @@ jobs:
         uses: helm/kind-action@v1.8.0
         with:
           install_only: true
-
+      
+      - name: Export Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+      
       - name: Set Up k8s Kind Cluster
-        run: kind create cluster --name default
+        run: kind create cluster --kubeconfig ~/.kube/config
       
       # - name: Verify Current Context
       #   run: |
