@@ -156,7 +156,10 @@ jobs:
       #   run: minikube start # --kubernetes-version='v1.26'
       #   # NB: Major and minor version number should match kubectl.
 
-      - name: Verify Cluster Information
+      - name: Verify Cluster Information (Kind)
+        run: kind get clusters
+
+      - name: Verify Cluster Information (kubectl)
         run: |
           kubectl cluster-info
           kubectl get nodes
