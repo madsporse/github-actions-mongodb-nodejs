@@ -2,6 +2,25 @@ name: Deployment - Reuseable Workflow
 
 on:
   workflow_call:
+    inputs:
+      mongodb-uri:
+        required: true
+        type: string
+      kubectl-version:
+        description: Provide the required Kubectl version
+        default: v1.27.0
+        required: false
+        type: string
+      k8s-manifest-dir:
+        description: Directory containing Kubernetes manifest files
+        default: kubernetes/
+        required: true
+        type: string
+      environmnent:
+        description: Provide the Deployment Environment
+        default: dev
+        required: true
+        type: string
     secrets:
       k8s-kubeconfig:
         required: true
@@ -13,7 +32,7 @@ on:
 jobs:
   reuse-deploy:
     environment:
-      name: development
+      name: ${{ inputs.environment }}
       url: https://${{ steps.set-ingress-host-address.outputs.APP_INGRESS_HOST }}
     outputs:
       APP_INGRESS_URL: ${{ steps.set-ingress-host-address.outputs.APP_INGRESS_HOST }}
@@ -25,7 +44,7 @@ jobs:
       - name: Install Kubectl
         uses: azure/setup-kubectl@v3
         with:
-           version: 'v1.26.0'
+           version: '${{ inputs.kubectl-version }}'
       
       - name: Set Kubeconfig File
         uses: azure/k8s-set-context@v3
@@ -56,7 +75,7 @@ jobs:
         with:
           tokenPrefix: '_{_'
           tokenSuffix: '_}_'
-          files: '["kubernetes/development/*.yaml"]'
+          files: '["${{ inputs.k8s-manifest-dir }}*.yaml"]'
         env:
           NAMESPACE: '${{ vars.NAMESPACE }}'
           REPLICAS: '${{ vars.REPLICAS }}'
@@ -64,7 +83,7 @@ jobs:
           INGRESS_IP: '${{ env.INGRESS_IP }}'
       
       - name: Check Files
-        run: cat kubernetes/development/*.yaml
+        run: cat ${{ inputs.k8s-manifest-dir }}*.yaml
 
       - name: Create MongoDB Secret
         run: |
@@ -77,7 +96,7 @@ jobs:
             -o yaml | kubectl apply -f -
         
       - name: Deploy to Development Environment
-        run: kubectl apply -f kubernetes/development
+        run: kubectl apply -f ${{ inputs.k8s-manifest-dir }}
 
       - name: Set App Ingress Host
         id: set-ingress-host-address
