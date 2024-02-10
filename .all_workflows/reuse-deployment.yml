@@ -28,6 +28,9 @@ on:
       mongodb-password:
         required: true
         description: 'Password for the MongoDB database'
+    outputs:
+      application-url:
+        value: ${{ jobs.reuse-deploy.outputs.APP_INGRESS_URL }}
 
 jobs:
   reuse-deploy:
