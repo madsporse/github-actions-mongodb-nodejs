@@ -41,6 +41,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Composite action - Cache and Install NPM Dependencies
+        uses: ./.all_workflows/custom-actions/composite-action
+        with:
+          path-of-folder: node_modules
+
       - name: Cache NPM dependencies
         uses: actions/cache@v3
         with:
@@ -85,14 +90,10 @@ jobs:
       #   with:
       #     node-version: 18
       
-      - name: Cache NPM dependencies
-        uses: actions/cache@v3
+      - name: Composite action - Cache and Install NPM Dependencies
+        uses: ./.all_workflows/custom-actions/composite-action
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-
-      - name: Install Dependencies
-        run: npm install
+          path-of-folder: node_modules
 
       - name: Code Coverage
         run: npm run coverage
