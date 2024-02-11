@@ -319,3 +319,38 @@ jobs:
           echo $URL
           echo -----------------------------------------------
           curl https://$URL/live -s -k | jq -r .status | grep -i live
+
+  slack-notification:
+    # Steps to set up Slack Notification
+    # 1. Create a Slack App
+    # 2. Activate Incoming Webhooks
+    # 3. Add Incoming Webhook to a Channel
+    # 4. Add the Webhook URL to GitHub Secrets
+    # 5. Use the Webhook URL (and channel name/URL) in the below step
+    name: Slack Notification
+    if: always()
+    needs: [dev-integration-testing, prod-integration-testing]
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        with:
+          status: ${{ job.status }}
+          text: |
+            Job: ${{ github.job }}
+            Status: ${{ job.status }}
+            Environment: ${{ needs.dev-deploy.outputs.environment }}
+            Application URL: ${{ needs.dev-deploy.outputs.application-url }}
+            Environment: ${{ needs.prod-deploy.outputs.environment }}
+            Application URL: ${{ needs.prod-deploy.outputs.application-url }}
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: 'github-actions-channel'
+          SLACK_COLOR: ${{ job.status }} # or a specific color like 'good' or '#ff00ff'
+          SLACK_ICON: https://gitlab.com/sidd-harth/solar-system/-/raw/main/images/saturn.png
+          SLACK_MESSAGE: ':hammer_and_wrench: Trigger by ${{ github.actor }} on ${{ github.repository }}'
+          SLACK_TITLE: 'Solar System CI/CD Pipeline Information'
