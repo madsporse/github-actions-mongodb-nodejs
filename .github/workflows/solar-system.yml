@@ -1,33 +1,237 @@
 name: Solar System Workflow
 
-on: 
+on:
   workflow_dispatch:
   push:
     branches:
       - main
       - 'feature/*'
-    
-jobs:
-    unit-testing:
-        name: Unit Testing
-        runs-on: ubuntu-latest
-        steps:
-        - name: Checkout Repository
-          uses: actions/checkout@v4
 
-        - name: Setup NodeJS Version
-          uses: actions/setup-node@v3
-          with:
-            node-version: 20
-    
-        - name: Install Dependencies
-          run: npm install
-    
-        - name: Unit Testing
-          run: npm test
-          
-        - name: Archive Test Result
-          uses: actions/upload-artifact@v3
-          with:
-            name: Mocha-Test-Result
-            path: test-results.xml
+env:
+  MONGO_URI: 'mongodb+srv://supercluster.d83jj.mongodb.net/superData'
+  MONGO_USERNAME: superuser
+  MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+
+jobs:
+  unit-testing:
+    name: Unit Testing
+    # Comment: Another concept is a "service container" - if a test step for instance relies on
+    #          interacting with another service (e.g. MongoDB database), a service container
+    #          can be spun up which the main code can interact with.
+    #          Code commented out below has been added as an example.
+    # # services:
+    # #   mongo-db:
+    # #     image: siddharth67/mongo-db:non-prod
+    # #     ports:
+    # #       - 27017:27017
+    # #     options:  # NB: If running both job and service in container, port mapping is not needed, and you can refer the container name instead
+    # #       --name mongo  # container name - useful for if we also run the job in a container
+    # # env:
+    # #   MONGO_URI: 'mongodb://localhost:27017/superData' / 'mongodb://mongo:27017/superData' # last one if service container used
+    # #   MONGO_USERNAME: non-prod-user
+    # #   MONGO_PASSWORD: non-prod-password
+
+    # Comment: Can use "strategy" combined with "matrix" to specify that we want to run a job
+    #          across a combination of configurations.
+    #          Code commented out below as example.
+    #          NB: Where you use e.g. node version (i.e. in container step above), you have to
+    #              change it to use the value from the matrix setup below. Same for operating system.
+    # # strategy:
+    # #   matrix:
+    # #     nodejs_version: [18, 20]
+    # #     os: [ubuntu-latest, macos-latest]
+    # #     exclude:
+    # #       - nodejs_version: 18
+    # #         os: macos-latest
+
+    # Comment: This job uses a "job container", meaning a container image is specified,
+    #          and a container is started within which the job is run.
+    #
+    # # container:
+    # #   image: node:20 # node:${{ matrix.nodejs_version }}
+
+    runs-on: ubuntu-latest # ${{ matrix.os }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # - name: Setup NodeJS Version
+      #   uses: actions/setup-node@v3
+      #   with:
+      #     node-version: 20
+
+      - name: Cache NPM dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Unit Testing
+        run: npm test
+
+      - name: Archive Test Result
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Mocha-Test-Result
+          path: test-results.xml
+
+  code-coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup NodeJS Version
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Code Coverage
+        run: npm run coverage
+        continue-on-error: true
+
+      - name: Upload code-coverage Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: Code-Coverage-Result
+          path: coverage
+          retention-days: 7
+
+  docker:
+    name: Containerization
+    permissions:
+      packages: write
+    runs-on: ubuntu-latest
+    needs: [unit-testing, code-coverage]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: '${{ github.repository_owner }}'
+          password: '${{ secrets.GITHUB_TOKEN }}'
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: 'ghcr.io/${{ github.repository_owner }}/solar-system:${{ github.sha }}'
+
+  dev-deploy:
+    runs-on: ubuntu-latest
+    needs: docker
+    environment:
+      name: development
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+           version: 'v1.26.0'
+      # NB: "ubuntu-latest" image comes with kubectl already installed.
+
+      # - name: Set Kube Context
+      #   uses: azure/k8s-set-context@v3
+      #   with:
+      #     method: kubeconfig
+      #     kubeconfig: '${{ secrets.KUBECONFIG }}'
+
+      - name: Create Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+      
+      - name: Verify Current Context
+        run: kubectl config current-context
+      
+      # - name: Start Minikube
+      #   run: minikube start # --kubernetes-version='v1.26'
+      #   # NB: Major and minor version number should match kubectl.
+      
+      - name: Install Kind
+        uses: helm/kind-action@v1.8.0
+        with:
+          install_only: true
+        # NB: "ubuntu-latest" image comes with kubectl already installed.
+      
+      # - name: Create Kubeconfig
+      #   run: |
+      #     mkdir -p ~/.kube
+      #     echo "${{ secrets.KUBECONFIG }}" > ~/.kube/config
+      
+      - name: Set Up k8s Kind Cluster
+        run: kind create cluster
+      
+      - name: Verify Cluster Information (Kind)
+        run: kind get kubeconfig
+
+      - name: Get Cluster Details
+        run: |
+          kubectl config get-contexts
+          echo -----------------------------------------------
+          kubectl config current-context
+          echo -----------------------------------------------
+          kubectl version -o yaml
+          echo -----------------------------------------------
+          kubectl get nodes
+      
+      # - name: Verify Current Context
+      #   run: |
+      #     echo "Current context:"
+      #     kubectl config current-context
+
+      # - name: Verify Cluster Information (Kind)
+      #   run: kind get clusters
+      
+      # - name: Verify Cluster Information (kubectl)
+      #   run: |
+      #     kubectl cluster-info
+      #     kubectl get nodes
+
+      # - name: Verify Cluster Information (kubectl)
+      #   run: |
+      #     kubectl cluster-info --context kind-kind --kubeconfig /home/runner/.kube/config
+      #     kubectl get nodes --context kind-kind --kubeconfig /home/runner/.kube/config
+      # NB: A Kubernetes cluster should be started before kubectl can
+      #     be used. This can be done using e.g. KIND or Minikube.
+
+      # - name: Fetch NGINX Ingress Controller IP
+      #   run: >
+      #     echo "INGRESS_IP=$(kubectl -n ingress-nginx get services
+      #     ingress-nginx-controller -o
+      #     jsonpath='{.status.loadBalancer.ingress[0].ip}')" >> $GITHUB_ENV
+      
+      # - name: Replace Placeholders in Kubernetes Manifest
+      #   uses: cschleiden/replace-tokens@v1
+      #   with:
+      #     tokenPrefix: '_{_'
+      #     tokenSuffix: '_}_'
+      #     files: '["kubernetes/development/*.yaml"]'
+      #   env:
+      #     NAMESPACE: '${{ vars.NAMESPACE }}'
+      #     REPLICAS: '${{ vars.REPLICAS }}'
+      #     IMAGE: 'ghcr.io/${{ github.repository_owner }}/solar-system:${{ github.sha }}'
+      #     INGRESS_IP: '${{ env.INGRESS_IP }}'
+      
+      # - name: Check That Kubernetes Manifests Are Correct
+      #   run: cat kubernetes/development/*.yaml
+      
+      # NB: Difference between GITHUB_ENV and GITHUB_OUTPUT:
+      #     - GITHUB_ENV: Used to set environment variables that are
+      #                   available to all subsequent steps in a job.
+      #     - GITHUB_OUTPUT: Used to set output parameters or values that
+      #                     can be used by other jobs in the same workflow.
